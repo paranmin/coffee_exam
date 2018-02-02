@@ -1,6 +1,5 @@
 package kr.or.dgit.coffee_exam.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JOptionPane;
@@ -48,5 +47,15 @@ public class ProductService {
 		}
 		
 		return list;
+	}
+	
+	public Product selectProductByCode(String code) {
+		Product searchPrd = null;
+		try {
+			searchPrd = prdDao.selectItemByCode(code);
+		} catch (DAOException e) {
+			JOptionPane.showMessageDialog(null, e.getErrorCode());
+		}
+		return searchPrd;
 	}
 }
