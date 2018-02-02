@@ -71,6 +71,7 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 
 		pPrdCost = new InputContent("제품단가");
 		pPrdCost.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
+		pPrdCost.getTextField().addFocusListener(focusAdapter);
 		p2.add(pPrdCost);
 
 		JPanel pEmpty1 = new JPanel();
@@ -83,6 +84,7 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 
 		pQuantity = new InputContent("판매수량");
 		pQuantity.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
+		pQuantity.getTextField().addFocusListener(focusAdapter);
 		p3.add(pQuantity);
 
 		JPanel pEmpty2 = new JPanel();
@@ -95,6 +97,7 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 
 		pMargin = new InputContent("마진율");
 		pMargin.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
+		pMargin.getTextField().addFocusListener(focusAdapter);
 		p4.add(pMargin);
 
 		JPanel pEmpty3 = new JPanel();
@@ -125,12 +128,14 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 				JTextField c = (JTextField) e.getSource();
 				if (c == pPrdCode.getTextField()) {
 					checkTfPrdCode(c);
+				} else {
+					checkTfNumber(c);
 				}
 			}
 		}
 
-		
 	};
+
 	private void checkTfPrdCode(JTextField c) {
 		if (!c.getText().isEmpty()) {
 			Product searchPrd = service.selectProductByCode(c.getText().trim());
@@ -139,6 +144,23 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 			JOptionPane.showMessageDialog(null, "제품코드가 비었습니다.");
 			c.requestFocus();
 		}
+	}
+
+	protected void checkTfNumber(JTextField c) {
+		try {
+			if (c.getText().trim().length() > 8) {
+				throw new NumberFormatException("8자리 정수만 받습니다.");
+			}
+			Integer.parseInt(c.getText().trim());
+		} catch(NumberFormatException e) {
+			pntErrorMsg(c, e.getMessage());
+		}
+	}
+
+	private void pntErrorMsg(JTextField c, String msg) {
+		JOptionPane.showMessageDialog(null, msg);
+		c.setText("");
+		c.requestFocus();
 	}
 
 	public void actionPerformed(ActionEvent e) {
