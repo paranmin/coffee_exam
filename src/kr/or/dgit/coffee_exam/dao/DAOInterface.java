@@ -9,5 +9,5 @@ public interface DAOInterface<T> {
 	void updateItem(T item) throws DAOException;
 	void deleteItem(T item) throws DAOException;
 	List<T> selectAllItem() throws DAOException;
-	T selectItemByNo(int no) throws DAOException;
+	T selectItemByCode(String code) throws DAOException;
 }
