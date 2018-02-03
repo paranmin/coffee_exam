@@ -21,36 +21,45 @@ CREATE TABLE `sales` (
 ) CHARSET=utf8 COMMENT='제품판매';
 
 
-DROP PROCEDURE IF EXISTS proc_rank_margin;
+DROP PROCEDURE IF EXISTS proc_rank_sell;
 DELIMITER $$
 $$		
-CREATE PROCEDURE proc_rank_margin()
-BEGIN
-	set @sup := 0, @tax := 0, @sell := 0, @marp := 0;
-	select p.code, p.prdname, s.unit_cost, s.quantity, 
-		(@sell := (s.unit_cost*s.quantity)) as sellprice, 
-		(@tax := ceil(@sell / 11)) as tax,
-		(@sup := @sell - @tax) as suprice,
-		per_margin,
-		(@marp := round(@sup * (s.per_margin/100))) as marprice 
-	from product p join sales s on s.code = p.code
-	order by marprice DESC;
-END
-
-
-DROP PROCEDURE IF EXISTS proc_rank_sell ;
-DELIMITER $$
-$$
 CREATE PROCEDURE proc_rank_sell()
 BEGIN
-	set @sup := 0, @tax := 0, @sell := 0, @marp := 0;
-	select p.code, p.prdname, s.unit_cost, s.quantity, 
-		(@sell := (s.unit_cost*s.quantity)) as sellprice, 
-		(@tax := ceil(@sell / 11)) as tax,
-		(@sup := @sell - @tax) as suprice,
-		per_margin,
-		(@marp := round(@sup * (s.per_margin/100))) as marprice 
-	from product p join sales s on s.code = p.code
-	order by sellprice DESC;
-END  $$
+	set @sup := 0, @tax := 0, @sell := 0, @marp := 0, @rank := 0, @score := 0;
+	select code, prdname, unit_cost, quantity, sellprice, tax, suprice, per_margin, marprice,
+		greatest(@rank:= if(@score = sellprice, @rank, @rank+ 1), least(0, @score := sellprice) ) as rank
+	from (
+		select p.code, p.prdname, unit_cost, quantity, per_margin, 
+			(@sell := (unit_cost*quantity)) as sellprice, 
+			(@tax := ceil(@sell / 11)) as tax,
+			(@sup := @sell - @tax) as suprice,
+			(@marp := round(@sup * (per_margin/100))) as marprice
+		from sales s
+		join product p on s.code = p.code
+	) temp
+	order by sellprice desc;
+END $$
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS proc_rank_margin;
+DELIMITER $$
+$$
+CREATE PROCEDURE proc_rank_margin()
+BEGIN
+	set @sup := 0, @tax := 0, @sell := 0, @marp := 0, @rank := 0, @score := 0;
+	select code, prdname, unit_cost, quantity, sellprice, tax, suprice, per_margin, marprice,
+		greatest(@rank:= if(@score = marprice, @rank, @rank+ 1), least(0, @score := marprice) ) as rank
+	from (
+		select p.code, p.prdname, unit_cost, quantity, per_margin, 
+			(@sell := (unit_cost*quantity)) as sellprice, 
+			(@tax := ceil(@sell / 11)) as tax,
+			(@sup := @sell - @tax) as suprice,
+			(@marp := round(@sup * (per_margin/100))) as marprice
+		from sales s
+		join product p on s.code = p.code
+	) temp
+	order by marprice desc;
+END $$
 DELIMITER ;
