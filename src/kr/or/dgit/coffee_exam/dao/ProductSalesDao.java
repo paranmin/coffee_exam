@@ -122,7 +122,7 @@ public class ProductSalesDao implements DAOInterface<ProductSales> {
 		int unitCost = rs.getInt("unit_cost");
 		int quantity = rs.getInt("quantity");
 		int perMargin = rs.getInt("per_margin");
-		int rank = rs.getRow();
+		int rank = rs.getInt("rank");
 		int sellprice = rs.getInt("sellprice");
 		int marginPrice = rs.getInt("marprice");
 		int suprice = rs.getInt("suprice");

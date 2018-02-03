@@ -24,6 +24,7 @@ public class ProductSaleRankUI extends JFrame {
 	}
 
 	private void initComponents() {
+		setTitle(title);
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 700, 300);
 		contentPane = new JPanel();
