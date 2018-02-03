@@ -2,8 +2,8 @@ package kr.or.dgit.coffee_exam;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -13,6 +13,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import kr.or.dgit.coffee_exam.dto.Product;
+import kr.or.dgit.coffee_exam.dto.ProductSales;
 import kr.or.dgit.coffee_exam.service.ProductService;
 import kr.or.dgit.coffee_exam.ui.InputContent;
 import javax.swing.SwingConstants;
@@ -31,6 +32,8 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 	private JButton btnOuput1;
 	private JButton btnOutput2;
 	private ProductService service;
+	private ProductSaleRankUI rankSell;
+	private ProductSaleRankUI rankMargin;
 
 	public ProductSaleUI() {
 		service = new ProductService();
@@ -38,6 +41,7 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 	}
 
 	private void initComponents() {
+		setTitle("커피전문점");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
@@ -56,7 +60,7 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 
 		pPrdCode = new InputContent("제품코드");
 		pPrdCode.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
-		pPrdCode.getTextField().addFocusListener(focusAdapter);
+		pPrdCode.getTextField().addKeyListener(keyAdapter);
 		p1.add(pPrdCode);
 
 		pPrdName = new InputContent("제품명");
@@ -71,7 +75,7 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 
 		pPrdCost = new InputContent("제품단가");
 		pPrdCost.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
-		pPrdCost.getTextField().addFocusListener(focusAdapter);
+		pPrdCost.getTextField().addKeyListener(keyAdapter);
 		p2.add(pPrdCost);
 
 		JPanel pEmpty1 = new JPanel();
@@ -84,7 +88,7 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 
 		pQuantity = new InputContent("판매수량");
 		pQuantity.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
-		pQuantity.getTextField().addFocusListener(focusAdapter);
+		pQuantity.getTextField().addKeyListener(keyAdapter);
 		p3.add(pQuantity);
 
 		JPanel pEmpty2 = new JPanel();
@@ -97,7 +101,7 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 
 		pMargin = new InputContent("마진율");
 		pMargin.getTextField().setHorizontalAlignment(SwingConstants.CENTER);
-		pMargin.getTextField().addFocusListener(focusAdapter);
+		pMargin.getTextField().addKeyListener(keyAdapter);
 		p4.add(pMargin);
 
 		JPanel pEmpty3 = new JPanel();
@@ -121,43 +125,48 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 		pBtn.add(btnOutput2);
 	}
 
-	private FocusAdapter focusAdapter = new FocusAdapter() {
+	private KeyAdapter keyAdapter = new KeyAdapter() {
 		@Override
-		public void focusLost(FocusEvent e) {
-			if (!e.isTemporary()) {
+		public void keyPressed(KeyEvent e) {
+			if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 				JTextField c = (JTextField) e.getSource();
 				if (c == pPrdCode.getTextField()) {
 					checkTfPrdCode(c);
+				} else if (c == pMargin.getTextField()) {
+					checkTfNumber(c, 2);
 				} else {
-					checkTfNumber(c);
+					checkTfNumber(c, 8);
 				}
 			}
 		}
-
 	};
 
 	private void checkTfPrdCode(JTextField c) {
-		if (!c.getText().isEmpty()) {
-			Product searchPrd = service.selectProductByCode(c.getText().trim());
+		try {
+			String upCode = c.getText().trim().toUpperCase();
+			Product searchPrd = service.selectProductByCode(upCode);
+
 			pPrdName.getTextField().setText(searchPrd.getPrdName());
-		} else {
-			JOptionPane.showMessageDialog(null, "제품코드가 비었습니다.");
-			c.requestFocus();
+			pPrdCode.getTextField().setText(upCode);
+			c.transferFocus();
+		} catch (NullPointerException e) {
+			alertErrorMsg(c, "제품코드가 올바르지 않습니다.");
 		}
 	}
 
-	protected void checkTfNumber(JTextField c) {
+	private void checkTfNumber(JTextField c, int length) {
 		try {
-			if (c.getText().trim().length() > 8) {
-				throw new NumberFormatException("8자리 정수만 받습니다.");
+			if (c.getText().trim().length() > length) {
+				throw new NumberFormatException();
 			}
 			Integer.parseInt(c.getText().trim());
-		} catch(NumberFormatException e) {
-			pntErrorMsg(c, e.getMessage());
+			c.transferFocus();
+		} catch (Exception e) {
+			alertErrorMsg(c, length + "자리 정수만 받습니다.");
 		}
 	}
 
-	private void pntErrorMsg(JTextField c, String msg) {
+	private void alertErrorMsg(JTextField c, String msg) {
 		JOptionPane.showMessageDialog(null, msg);
 		c.setText("");
 		c.requestFocus();
@@ -175,12 +184,51 @@ public class ProductSaleUI extends JFrame implements ActionListener {
 		}
 	}
 
+	private void clearTextField() {
+		pPrdCode.getTextField().setText("");
+		pPrdName.getTextField().setText("");
+		pPrdCost.getTextField().setText("");
+		pQuantity.getTextField().setText("");
+		pMargin.getTextField().setText("");
+	}
+
+	private ProductSales getSalesData() {
+		String code = pPrdCode.getTextField().getText().trim();
+		String prdName = pPrdName.getTextField().getText().trim();
+		Product product = new Product(code, prdName);
+
+		int unitCost = Integer.parseInt(pPrdCost.getTextField().getText().trim());
+		int quantity = Integer.parseInt(pQuantity.getTextField().getText().trim());
+		int perMargin = Integer.parseInt(pMargin.getTextField().getText().trim());
+
+		return new ProductSales(product, unitCost, quantity, perMargin);
+	}
+
 	protected void actionPerformedBtnInput(ActionEvent e) {
+		service.insertProductSale(getSalesData());
+		clearTextField();
+		pPrdCode.getTextField().requestFocus();
+		if (rankSell != null && rankSell.isVisible()) {
+			rankSell.setListData(service.selectAllItemBySell());
+		}
+		if (rankMargin != null && rankMargin.isVisible()) {
+			rankMargin.setListData(service.selectAllItemByMargin());
+		}
 	}
 
 	protected void actionPerformedBtnOuput1(ActionEvent e) {
+		if (rankSell == null) {
+			rankSell = new ProductSaleRankUI("판 매 금 액 순 위");
+		}
+		rankSell.setListData(service.selectAllItemBySell());
+		rankSell.setVisible(true);
 	}
 
 	protected void actionPerformedBtnOutput2(ActionEvent e) {
+		if (rankMargin == null) {
+			rankMargin = new ProductSaleRankUI("마 진 액 순 위");
+		}
+		rankMargin.setListData(service.selectAllItemByMargin());
+		rankMargin.setVisible(true);
 	}
 }

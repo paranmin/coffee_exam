@@ -20,10 +20,14 @@ public class ProductService {
 	}
 
 	public void insertProductSale(ProductSales sales) {
+		String message = null;
 		try {
 			salesDao.insertItem(sales);
+			message = "입력되었습니다.";
 		} catch (DAOException e) {
-			JOptionPane.showMessageDialog(null, e.getErrorCode());
+			message = e.getErrorCode();
+		} finally {
+			JOptionPane.showMessageDialog(null, message);
 		}
 	}
 	
@@ -38,10 +42,21 @@ public class ProductService {
 		return list;
 	}
 	
-	public List<ProductSales> selectProductSalesAllItem() {
+	public List<ProductSales> selectAllItemBySell() {
 		List<ProductSales> list = null;
 		try {
-			list = salesDao.selectAllItem();
+			list = salesDao.selectAllItemByProc("proc_rank_sell()");
+		} catch (DAOException e) {
+			JOptionPane.showMessageDialog(null, e.getErrorCode());
+		}
+		
+		return list;
+	}
+	
+	public List<ProductSales> selectAllItemByMargin() {
+		List<ProductSales> list = null;
+		try {
+			list = salesDao.selectAllItemByProc("proc_rank_margin()");
 		} catch (DAOException e) {
 			JOptionPane.showMessageDialog(null, e.getErrorCode());
 		}

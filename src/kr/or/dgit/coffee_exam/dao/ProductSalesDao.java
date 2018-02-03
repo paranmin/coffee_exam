@@ -7,10 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import kr.or.dgit.DB_Connection.jdbc.DBConn;
 import kr.or.dgit.coffee_exam.dao.exception.DAOException;
 import kr.or.dgit.coffee_exam.dto.Product;
 import kr.or.dgit.coffee_exam.dto.ProductSales;
-import kr.or.dgit.erp_application.jdbc.DBConn;
 
 public class ProductSalesDao implements DAOInterface<ProductSales> {
 	private static final ProductSalesDao instance = new ProductSalesDao();
@@ -100,7 +100,37 @@ public class ProductSalesDao implements DAOInterface<ProductSales> {
 		}
 		return null;
 	}
+	
+	public List<ProductSales> selectAllItemByProc(String proc) throws DAOException {
+		String sql = String.format("{call %s}", proc);
+		Connection conn = DBConn.getInstance().getConnection();
+		
+		List<ProductSales> list = new ArrayList<>();
+		try (PreparedStatement pstmt = conn.prepareStatement(sql);) {
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()) {
+				list.add(getFullProductSales(rs));
+			}
+		} catch (SQLException e) {
+			throw new DAOException(e);
+		}
+		return list;
+	}
 
+	private ProductSales getFullProductSales(ResultSet rs) throws SQLException {
+		Product product = new Product(rs.getString("code"), rs.getString("prdname"));
+		int unitCost = rs.getInt("unit_cost");
+		int quantity = rs.getInt("quantity");
+		int perMargin = rs.getInt("per_margin");
+		int rank = rs.getRow();
+		int sellprice = rs.getInt("sellprice");
+		int marginPrice = rs.getInt("marprice");
+		int suprice = rs.getInt("suprice");
+		int tax = rs.getInt("tax");
+		
+		return new ProductSales(product, unitCost, quantity, perMargin, rank, suprice, tax, sellprice, marginPrice);
+	}
+	
 	private ProductSales getProductSales(ResultSet rs) throws SQLException {
 		Product product = new Product(rs.getString("code"));
 		int unitCost = rs.getInt("unit_cost");
