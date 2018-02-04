@@ -20,10 +20,28 @@ public class TableContent extends AbtractTableContent<ProductSales> {
 	}
 
 	public Object[][] getRows(List<ProductSales> list) {
-		Object[][] rows = new Object[list.size()][];
-		for (int i = 0; i < rows.length; i++) {
-			rows[i] = list.get(i).toArray();
+		int supTotal = 0;
+		int taxTotal = 0;
+		int sellTotal = 0;
+		int marginTotal = 0;
+		Object[][] rows = new Object[list.size()+1][];
+
+		for (int i = 0; i < rows.length-1; i++) {
+			ProductSales sales = list.get(i);
+			rows[i] = sales.toArray();
+			
+			supTotal = supTotal + sales.getSuprice();
+			taxTotal = taxTotal + sales.getTax();
+			sellTotal = sellTotal + sales.getSellprice();
+			marginTotal = marginTotal + sales.getMarginPrice();
 		}
+		rows[rows.length-1] = new Object[] {"합계", "", "", "", "",
+				String.format("%,d", supTotal),
+				String.format("%,d", taxTotal),
+				String.format("%,d", sellTotal),
+				"",
+				String.format("%,d", marginTotal)};
+		
 		return rows;
 	}
 }
