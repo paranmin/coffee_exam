@@ -7,10 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import kr.or.dgit.DB_Connection.jdbc.DBConn;
 import kr.or.dgit.coffee_exam.dao.exception.DAOException;
 import kr.or.dgit.coffee_exam.dto.Product;
 import kr.or.dgit.coffee_exam.dto.ProductSales;
+import kr.or.dgit.db_connection.jdbc.DBConn;
 
 public class ProductSalesDao implements DAOInterface<ProductSales> {
 	private static final ProductSalesDao instance = new ProductSalesDao();
