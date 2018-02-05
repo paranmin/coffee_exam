@@ -1,45 +1,72 @@
--- 커피전문
+-- 커피전문점
 DROP SCHEMA IF EXISTS coffee_project;
 
--- 커피전문
+-- 커피전문점
 CREATE SCHEMA coffee_project;
 
--- 제품코드표
-CREATE TABLE coffee_project.product (
-	code    VARCHAR(4)  NOT NULL COMMENT '제품코드', -- 제품코드
-	prdname VARCHAR(10) NOT NULL COMMENT '제품명' -- 제품명
-)
-COMMENT '제품코드표';
+CREATE TABLE `product` (
+  `code` varchar(4) NOT NULL COMMENT '제품코드',
+  `prdname` varchar(10) NOT NULL COMMENT '제품명',
+  PRIMARY KEY (`code`)
+) CHARSET=utf8 COMMENT='제품코드표';
 
--- 제품코드표
-ALTER TABLE coffee_project.product
-	ADD CONSTRAINT PK_product -- 제품코드표 기본키
-		PRIMARY KEY (
-			code -- 제품코드
-		);
 
--- 제품판매
-CREATE TABLE coffee_project.sales (
-	code       VARCHAR(4) NOT NULL COMMENT '제품코드', -- 제품코드
-	unit_cost  INTEGER    NULL     COMMENT '제품단가', -- 제품단가
-	quantity   INTEGER    NULL     COMMENT '판매수량', -- 판매수량
-	per_margin INTEGER    NULL     COMMENT '마진율' -- 마진율
-)
-COMMENT '제품판매';
+CREATE TABLE `sales` (
+  `code` varchar(4) NOT NULL COMMENT '제품코드',
+  `unit_cost` int(11) DEFAULT NULL COMMENT '제품단가',
+  `quantity` int(11) DEFAULT NULL COMMENT '판매수량',
+  `per_margin` int(11) DEFAULT NULL COMMENT '마진율',
+  PRIMARY KEY (`code`),
+  CONSTRAINT `FK_product_TO_sales` FOREIGN KEY (`code`) REFERENCES `product` (`code`)
+) CHARSET=utf8 COMMENT='제품판매';
 
--- 제품판매
-ALTER TABLE coffee_project.sales
-	ADD CONSTRAINT PK_sales -- 제품판매 기본키
-		PRIMARY KEY (
-			code -- 제품코드
-		);
 
--- 제품판매
-ALTER TABLE coffee_project.sales
-	ADD CONSTRAINT FK_product_TO_sales -- 제품코드표 -> 제품판매
-		FOREIGN KEY (
-			code -- 제품코드
-		)
-		REFERENCES coffee_project.product ( -- 제품코드표
-			code -- 제품코드
-		);
+DROP PROCEDURE IF EXISTS proc_rank_sell;
+DELIMITER $$
+$$		
+CREATE PROCEDURE proc_rank_sell()
+BEGIN
+	set @sup := 0, @tax := 0, @sell := 0, @marp := 0, @rank := 0, @score := 0, @point:=1;
+	select code, prdname, unit_cost, quantity, sellprice, tax, suprice, per_margin, marprice,
+		greatest( 
+			@rank := if(@score = sellprice, @rank, @rank+ @point),
+			least(0, @point:=if(@score = sellprice, @point+1, 1), @score := sellprice)
+		) as rank
+		
+	from (
+		select p.code, p.prdname, unit_cost, quantity, per_margin, 
+			(@sell := (unit_cost*quantity)) as sellprice, 
+			(@tax := ceil(@sell / 11)) as tax,
+			(@sup := @sell - @tax) as suprice,
+			(@marp := round(@sup * (per_margin/100))) as marprice
+		from sales s
+		join product p on s.code = p.code
+	) temp
+	order by sellprice desc;
+END $$
+DELIMITER ;
+
+
+DROP PROCEDURE IF EXISTS proc_rank_margin;
+DELIMITER $$
+$$
+CREATE PROCEDURE proc_rank_margin()
+BEGIN
+	set @sup := 0, @tax := 0, @sell := 0, @marp := 0, @rank := 0, @score := 0;
+	select code, prdname, unit_cost, quantity, sellprice, tax, suprice, per_margin, marprice,
+		greatest( 
+			@rank := if(@score = marprice, @rank, @rank+ @point),
+			least(0, @point:=if(@score = marprice, @point+1, 1), @score := marprice)
+		) as rank
+	from (
+		select p.code, p.prdname, unit_cost, quantity, per_margin, 
+			(@sell := (unit_cost*quantity)) as sellprice, 
+			(@tax := ceil(@sell / 11)) as tax,
+			(@sup := @sell - @tax) as suprice,
+			(@marp := round(@sup * (per_margin/100))) as marprice
+		from sales s
+		join product p on s.code = p.code
+	) temp
+	order by marprice desc;
+END $$
+DELIMITER ;
